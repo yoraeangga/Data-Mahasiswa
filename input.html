@@ -75,5 +75,49 @@
         </form>
         <a href="index.html" class="back-link">← Kembali ke Menu</a>
     </div>
+    <script>
+    // GANTI DENGAN URL WEB APP ANDA DARI LANGKAH A.3
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzyePp9jiDTMJ-qCWQqknQ0EhOaFE0M-xCD_Y3s4YMYtY-pOuil50B0QIwZgngi0GyAHQ/exec"; 
+
+    // Tangani pengiriman formulir
+    document.querySelector('form').addEventListener('submit', function(e) {
+        e.preventDefault(); 
+
+        const button = document.querySelector('form button[type="submit"]');
+        button.disabled = true;
+        button.textContent = 'Menyimpan...';
+
+        // Ambil nilai input
+        const dataToSend = {
+            nim: document.getElementById('nim').value,
+            nama: document.getElementById('nama').value,
+            prodi: document.getElementById('prodi').value
+        };
+
+        // Kirim data ke Google Apps Script (Web App URL)
+        fetch(WEB_APP_URL, {
+            method: 'POST',
+            mode: 'no-cors', // Mode ini diperlukan untuk CORS sederhana dengan Apps Script
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(dataToSend) // Kirim data sebagai string JSON
+        })
+        .then(response => {
+            // Karena 'no-cors', kita tidak bisa membaca respons, 
+            // tapi kita tahu data biasanya terkirim jika tidak ada error jaringan.
+            alert('✅ Data mahasiswa berhasil disimpan ke Google Sheet!');
+            e.target.reset(); // Bersihkan formulir
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('❌ Terjadi kesalahan saat mengirim data. Cek koneksi atau URL Apps Script.');
+        })
+        .finally(() => {
+            button.disabled = false;
+            button.textContent = 'Simpan Data';
+        });
+    });
+</script>
 </body>
 </html>
