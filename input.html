@@ -33,7 +33,7 @@
             margin-bottom: 15px;
             border: 1px solid #ccc;
             border-radius: 4px;
-            box-sizing: border-box; /* Penting untuk width 100% */
+            box-sizing: border-box; 
         }
         form button {
             background-color: #28a745;
@@ -45,9 +45,15 @@
             width: 100%;
             font-size: 1.1em;
             margin-top: 20px;
+            transition: background-color 0.3s;
         }
-        form button:hover {
+        form button:hover:not(:disabled) { /* Pastikan hover hanya bekerja jika tidak disabled */
             background-color: #1e7e34;
+        }
+        /* Gaya untuk tombol saat disabled */
+        form button:disabled {
+            background-color: #90ee90; /* Warna lebih terang saat disabled */
+            cursor: not-allowed;
         }
         .back-link {
             display: block;
@@ -61,7 +67,7 @@
 <body>
     <div class="container">
         <h1>➕ Input Data Mahasiswa</h1>
-        <form>
+        <form id="mahasiswaForm"> 
             <label for="nim">NIM:</label>
             <input type="number" id="nim" name="nim" required>
 
@@ -75,49 +81,65 @@
         </form>
         <a href="index.html" class="back-link">← Kembali ke Menu</a>
     </div>
+    
     <script>
-    // GANTI DENGAN URL WEB APP ANDA DARI LANGKAH A.3
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzyePp9jiDTMJ-qCWQqknQ0EhOaFE0M-xCD_Y3s4YMYtY-pOuil50B0QIwZgngi0GyAHQ/exec"; 
+        // URL WEB APP ANDA (URL yang Anda kirimkan)
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzyePp9jiDTMJ-qCWQqknQ0EhOaFE0M-xCD_Y3s4YMYtY-pOuil50B0QIwZgngi0GyAHQ/exec"; 
 
-    // Tangani pengiriman formulir
-    document.querySelector('form').addEventListener('submit', function(e) {
-        e.preventDefault(); 
+        const form = document.getElementById('mahasiswaForm');
+        const button = form.querySelector('button[type="submit"]');
 
-        const button = document.querySelector('form button[type="submit"]');
-        button.disabled = true;
-        button.textContent = 'Menyimpan...';
+        // Fungsi untuk mengaktifkan/menonaktifkan input dan tombol
+        function setFormEnabled(enabled) {
+            // Menonaktifkan/Mengaktifkan tombol submit
+            button.disabled = !enabled;
+            button.textContent = enabled ? 'Simpan Data' : 'Menyimpan...';
 
-        // Ambil nilai input
-        const dataToSend = {
-            nim: document.getElementById('nim').value,
-            nama: document.getElementById('nama').value,
-            prodi: document.getElementById('prodi').value
-        };
+            // Menonaktifkan/Mengaktifkan semua input fields di dalam form
+            const inputs = form.querySelectorAll('input, select, textarea');
+            inputs.forEach(input => {
+                input.disabled = !enabled;
+            });
+        }
 
-        // Kirim data ke Google Apps Script (Web App URL)
-        fetch(WEB_APP_URL, {
-            method: 'POST',
-            mode: 'no-cors', // Mode ini diperlukan untuk CORS sederhana dengan Apps Script
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(dataToSend) // Kirim data sebagai string JSON
-        })
-        .then(response => {
-            // Karena 'no-cors', kita tidak bisa membaca respons, 
-            // tapi kita tahu data biasanya terkirim jika tidak ada error jaringan.
-            alert('✅ Data mahasiswa berhasil disimpan ke Google Sheet!');
-            e.target.reset(); // Bersihkan formulir
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('❌ Terjadi kesalahan saat mengirim data. Cek koneksi atau URL Apps Script.');
-        })
-        .finally(() => {
-            button.disabled = false;
-            button.textContent = 'Simpan Data';
+        // Tangani pengiriman formulir
+        form.addEventListener('submit', function(e) {
+            e.preventDefault(); 
+            
+            // 1. NONAKTIFKAN FORMULIR sebelum mengirim data
+            setFormEnabled(false); 
+
+            // Ambil nilai input
+            const dataToSend = {
+                nim: document.getElementById('nim').value,
+                nama: document.getElementById('nama').value,
+                prodi: document.getElementById('prodi').value
+            };
+
+            // Kirim data ke Google Apps Script (Web App URL)
+            fetch(WEB_APP_URL, {
+                method: 'POST',
+                mode: 'no-cors', 
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(dataToSend)
+            })
+            .then(() => {
+                // Berhasil (mode no-cors)
+                alert('✅ Data mahasiswa berhasil disimpan ke Google Sheet!');
+                e.target.reset(); // Bersihkan formulir
+            })
+            .catch(error => {
+                // Kegagalan
+                console.error('Error:', error);
+                alert('❌ Terjadi kesalahan saat mengirim data. Cek koneksi atau URL Apps Script.');
+            })
+            .finally(() => {
+                // 2. AKTIFKAN KEMBALI FORMULIR setelah proses selesai (berhasil/gagal)
+                setFormEnabled(true);
+            });
         });
-    });
-</script>
+    </script>
 </body>
 </html>
