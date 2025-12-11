@@ -226,6 +226,7 @@
         
         let participants = [];
         let participantIndexToEdit = -1;
+        let masterJurusanMap = {};
 
         const tableBody = document.getElementById('participantTableBody');
         const countPeserta = document.getElementById('countPeserta');
@@ -293,6 +294,67 @@
             
             return true;
         }
+// NEW FUNCTION
+        function fillDropdown(elementId, dataList, placeholder) {
+    const select = document.getElementById(elementId);
+    select.innerHTML = `<option value="">-- ${placeholder} --</option>`;
+
+    dataList.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item;
+        option.textContent = item;
+        select.appendChild(option);
+    });
+}
+
+// Fungsi utama untuk mengambil data dari Google Sheet saat halaman dimuat
+async function loadMasterData() {
+    console.log("Memuat data master dari Google Sheet...");
+    
+    try {
+        const response = await fetch(WEB_APP_URL, { method: 'GET' });
+        const data = await response.json(); 
+        
+        // 1. Simpan map Jurusan secara global
+        masterJurusanMap = data.jurusanMap; 
+        
+        // 2. Mengisi dropdown Institusi (Dropdown Utama)
+        fillDropdown('namaInstitusi', data.institusiList, 'Pilih Institusi');
+        
+        // 3. Mengisi dropdown Kota (Wilayah) - Dipanggil dua kali untuk Kota TTL dan Kota Alamat
+        fillDropdown('tempatLahir', data.wilayah, 'Pilih Kota/Kabupaten'); // Ganti ID input TTL (lihat perubahan HTML di bawah)
+        fillDropdown('kotaAlamat', data.wilayah, 'Pilih Kota/Kabupaten'); // Ganti ID input Alamat (lihat perubahan HTML di bawah)
+
+        // 4. Inisialisasi Jurusan sebagai kosong
+        fillDropdown('jurusanProdi', [], 'Pilih Jurusan'); 
+        
+        console.log("Data master berhasil dimuat.");
+
+    } catch (error) {
+        console.error('Gagal memuat data master:', error);
+        alert('❌ Gagal mengambil daftar pilihan dari Google Sheet.');
+    }
+}
+
+        // ============== EVENT LISTENER BARU UNTUK DEPENDENT DROPDOWN ==============
+
+document.getElementById('namaInstitusi').addEventListener('change', function() {
+    const selectedInstitusi = this.value;
+    const jurusanDropdown = document.getElementById('jurusanProdi');
+
+    jurusanDropdown.innerHTML = '<option value="">-- Pilih Jurusan --</option>'; // Reset
+
+    if (selectedInstitusi && masterJurusanMap[selectedInstitusi]) {
+        const jurusans = masterJurusanMap[selectedInstitusi];
+        
+        jurusans.forEach(jurusan => {
+            const option = document.createElement('option');
+            option.value = jurusan;
+            option.textContent = jurusan;
+            jurusanDropdown.appendChild(option);
+        });
+    }
+});
 
         // ===================================
         // TAMPILAN (RENDER)
@@ -521,6 +583,7 @@
 
         // Inisialisasi tampilan
         renderParticipants();
+loadMasterData();
     </script>
 </body>
 </html>
