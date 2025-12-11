@@ -163,7 +163,9 @@
                     <h4>Data Tempat & Tanggal Lahir (Usia Min. 14 Tahun)</h4>
                     <div class="form-group">
                         <label for="tempatLahir">Tempat/Kota Lahir:</label>
-                        <input type="text" id="tempatLahir" required>
+                        <select id="tempatLahir" required>
+                        <option value="">-- Memuat Data Wilayah... --</option>
+                            </select>
                     </div>
                     <div class="form-group">
                         <label for="tanggalLahir">Tanggal Lahir:</label>
@@ -176,8 +178,10 @@
                         <input type="text" id="jalan" required>
                     </div>
                     <div class="form-group">
-                        <label for="kota">Kota:</label>
-                        <input type="text" id="kota" required>
+                        <label for="kotaAlamat">Kota Alamat:</label>
+                        <select id="kotaAlamat" required>
+                            <option value="">-- Memuat Data Wilayah... --</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label for="kelurahan">Kelurahan:</label>
