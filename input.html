@@ -4,25 +4,74 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Input Data Peserta</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        /* CSS DARI KODE SEBELUMNYA HILANG KARENA BATASAN KARAKTER, TAPI HANYA TAMBAHKAN STYLE INI UNTUK LIST/TABLE */
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f9; }
+        /* [4] RUBY SEMUA FONT JADI POPPINS */
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background-color: #f4f4f9; 
+        }
         .container { max-width: 800px; margin: 0 auto; }
         h1 { color: #333; text-align: center; }
-        .form-section { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .form-group label { display: block; margin-top: 10px; font-weight: bold; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .form-section { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            margin-bottom: 20px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+        }
+        .form-group label { display: block; margin-top: 10px; font-weight: 600; }
+        .form-group input, .form-group select, .form-group textarea { 
+            font-family: 'Poppins', sans-serif; /* Terapkan font pada input */
+            width: 100%; 
+            padding: 10px; 
+            margin-top: 5px; 
+            margin-bottom: 15px; 
+            border: 1px solid #ccc; 
+            border-radius: 4px; 
+            box-sizing: border-box; 
+        }
         .btn-green { background-color: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
         .btn-green:hover:not(:disabled) { background-color: #1e7e34; }
         .btn-red { background-color: #dc3545; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; }
         .btn-red:hover { background-color: #c82333; }
+        .btn-red-large { background-color: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-red-large:hover { background-color: #c82333; }
+        
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         table, th, td { border: 1px solid #ddd; }
         th, td { padding: 8px; text-align: left; font-size: 0.9em; }
-        th { background-color: #f2f2f2; }
+        th { background-color: #e9ecef; }
         .action-cell { width: 1%; white-space: nowrap; }
         .back-link { display: block; text-align: center; margin-top: 30px; color: #007bff; text-decoration: none; }
-        #finalSubmit { margin-top: 20px; font-size: 1.2em; }
+        
+        /* [2] STYLE UNTUK MODAL POP-UP */
+        #modalOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none; /* Awalnya tersembunyi */
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        #modalContent {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        #finalSubmit { margin-top: 20px; font-size: 1.2em; width: 100%; }
     </style>
 </head>
 <body>
@@ -51,7 +100,7 @@
                         <option value="Sistem Informasi">Sistem Informasi</option>
                     </select>
                 </div>
-                <button type="button" class="btn-green" id="btnAddParticipant">Tambah Data Peserta</button>
+                <button type="button" class="btn-green" id="btnAddParticipant" style="width: 100%;">Tambah Data Peserta</button>
             </form>
         </div>
 
@@ -74,115 +123,120 @@
                 </table>
             </div>
             
-            <button type="button" class="btn-green" id="finalSubmit">Kirim Semua Data ke Sheet</button>
+            <button type="button" class="btn-green" id="finalSubmit" style="display:none;">Kirim Semua Data ke Sheet</button>
         </div>
         
-        <div id="modalParticipant" class="form-section" style="display:none;">
-            <h3>Input Data Diri Peserta</h3>
-            <form id="detailForm">
-                <div class="form-group">
-                    <label for="namaLengkap">Nama Lengkap:</label>
-                    <input type="text" id="namaLengkap" required>
-                </div>
-                <div class="form-group">
-                    <label for="nim">NIM:</label>
-                    <input type="number" id="nim" required>
-                </div>
-                <div class="form-group">
-                    <label for="agama">Agama:</label>
-                    <select id="agama" required>
-                        <option value="">-- Pilih Agama --</option>
-                        <option value="Islam">Islam</option>
-                        <option value="Kristen">Kristen</option>
-                        <option value="Katolik">Katolik</option>
-                        <option value="Hindu">Hindu</option>
-                        <option value="Buddha">Buddha</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Jenis Kelamin:</label>
-                    <input type="radio" id="jkL" name="jenisKelamin" value="Laki-laki" required> <label for="jkL" style="display:inline;">Laki-laki</label>
-                    <input type="radio" id="jkP" name="jenisKelamin" value="Perempuan"> <label for="jkP" style="display:inline;">Perempuan</label>
-                </div>
-                
-                <h4>Data Tempat & Tanggal Lahir (Usia Min. 14 Tahun)</h4>
-                <div class="form-group">
-                    <label for="tempatLahir">Tempat/Kota Lahir:</label>
-                    <input type="text" id="tempatLahir" required>
-                </div>
-                <div class="form-group">
-                    <label for="tanggalLahir">Tanggal Lahir:</label>
-                    <input type="date" id="tanggalLahir" required>
-                </div>
-                
-                <h4>Data Alamat</h4>
-                <div class="form-group">
-                    <label for="jalan">Jalan:</label>
-                    <input type="text" id="jalan" required>
-                </div>
-                <div class="form-group">
-                    <label for="kota">Kota:</label>
-                    <input type="text" id="kota" required>
-                </div>
-                <div class="form-group">
-                    <label for="kelurahan">Kelurahan:</label>
-                    <input type="text" id="kelurahan" required>
-                </div>
-                <div class="form-group">
-                    <label for="kecamatan">Kecamatan:</label>
-                    <input type="text" id="kecamatan" required>
-                </div>
-                <div class="form-group">
-                    <label for="kodePos">Kode Pos:</label>
-                    <input type="number" id="kodePos" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="noTelp">No. Telp:</label>
-                    <input type="text" id="noTelp" required>
-                </div>
-                
-                <div id="ktpSection" style="display:none;">
+        <div id="modalOverlay">
+            <div id="modalContent">
+                <h3>Input Data Diri Peserta</h3>
+                <form id="detailForm">
                     <div class="form-group">
-                        <label for="noKTP">No. KTP (Usia 17+):</label>
-                        <input type="number" id="noKTP">
+                        <label for="namaLengkap">Nama Lengkap:</label>
+                        <input type="text" id="namaLengkap" required>
                     </div>
-                </div>
-                
-                <h4>Periode Kegiatan</h4>
-                <div class="form-group">
-                    <label for="startDate">Start Date:</label>
-                    <input type="date" id="startDate" required>
-                </div>
-                <div class="form-group">
-                    <label for="endDate">End Date:</label>
-                    <input type="date" id="endDate" required>
-                </div>
-                
-                <button type="submit" class="btn-green">Simpan ke Daftar</button>
-                <button type="button" class="btn-red" id="btnCancel">Batal</button>
-            </form>
+                    <div class="form-group">
+                        <label for="nim">NIM:</label>
+                        <input type="number" id="nim" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="agama">Agama:</label>
+                        <select id="agama" required>
+                            <option value="">-- Pilih Agama --</option>
+                            <option value="Islam">Islam</option>
+                            <option value="Kristen">Kristen</option>
+                            <option value="Katolik">Katolik</option>
+                            <option value="Hindu">Hindu</option>
+                            <option value="Buddha">Buddha</option>
+                            <option value="Lainnya">Lainnya</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="jenisKelamin">Jenis Kelamin:</label>
+                        <select id="jenisKelamin" name="jenisKelamin" required>
+                            <option value="">-- Pilih Jenis Kelamin --</option>
+                            <option value="Laki-laki">Laki-laki</option>
+                            <option value="Perempuan">Perempuan</option>
+                        </select>
+                    </div>
+                    
+                    <h4>Data Tempat & Tanggal Lahir (Usia Min. 14 Tahun)</h4>
+                    <div class="form-group">
+                        <label for="tempatLahir">Tempat/Kota Lahir:</label>
+                        <input type="text" id="tempatLahir" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="tanggalLahir">Tanggal Lahir:</label>
+                        <input type="date" id="tanggalLahir" required>
+                    </div>
+                    
+                    <h4>Data Alamat</h4>
+                    <div class="form-group">
+                        <label for="jalan">Jalan:</label>
+                        <input type="text" id="jalan" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="kota">Kota:</label>
+                        <input type="text" id="kota" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="kelurahan">Kelurahan:</label>
+                        <input type="text" id="kelurahan" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="kecamatan">Kecamatan:</label>
+                        <input type="text" id="kecamatan" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="kodePos">Kode Pos:</label>
+                        <input type="number" id="kodePos" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="noTelp">No. Telp:</label>
+                        <input type="text" id="noTelp" required>
+                    </div>
+                    
+                    <div id="ktpSection" style="display:none;">
+                        <div class="form-group">
+                            <label for="noKTP">No. KTP (Usia 17+):</label>
+                            <input type="number" id="noKTP">
+                        </div>
+                    </div>
+                    
+                    <h4>Periode Kegiatan</h4>
+                    <div class="form-group">
+                        <label for="startDate">Start Date:</label>
+                        <input type="date" id="startDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="endDate">End Date:</label>
+                        <input type="date" id="endDate" required>
+                    </div>
+                    
+                    <button type="submit" class="btn-green" style="width: 100%; margin-bottom: 10px;">Simpan ke Daftar</button>
+                    <button type="button" class="btn-red-large" id="btnCancel" style="width: 100%;">Batal</button>
+                </form>
+            </div>
         </div>
     </div>
     
     <script>
-        // PASTIKAN URL WEB APP INI SUDAH DI-DEPLOY ULANG UNTUK FUNGSI BARU
-        // (Lihat instruksi perubahan Apps Script di bawah)
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzyePp9jiDTMJ-qCWQqknQ0EhOaFE0M-xCD_Y3s4YMYtY-pOuil50B0QIwZgngi0GyAHQ/exec"; 
         
-        // Data peserta disimpan sementara di array ini
         let participants = [];
-        let participantIndexToEdit = -1; // -1 jika menambah baru
+        let participantIndexToEdit = -1;
 
         const tableBody = document.getElementById('participantTableBody');
         const countPeserta = document.getElementById('countPeserta');
-        const modalParticipant = document.getElementById('modalParticipant');
+        const modalOverlay = document.getElementById('modalOverlay'); // Ganti dengan overlay
         const detailForm = document.getElementById('detailForm');
         const ktpSection = document.getElementById('ktpSection');
         const btnAddParticipant = document.getElementById('btnAddParticipant');
         const finalSubmitButton = document.getElementById('finalSubmit');
+        const institusiForm = document.getElementById('institusiForm');
         
-        // Fungsi untuk mengaktifkan/menonaktifkan seluruh form di halaman
+        // Fungsi untuk mengaktifkan/menonaktifkan elemen
         function setFormEnabled(formElement, enabled, text = 'Loading...') {
             const button = formElement.querySelector('button[type="submit"], button#finalSubmit');
             if(button) {
@@ -226,6 +280,7 @@
                  return false;
             }
 
+            // Validasi Start Date tidak kurang dari hari ini
             if (startDate < today) {
                 alert("Gagal: Start Date tidak boleh kurang dari hari ini.");
                 return false;
@@ -247,13 +302,14 @@
             tableBody.innerHTML = '';
             countPeserta.textContent = participants.length;
 
+            // [1] Sembunyikan tombol "Kirim Semua Data ke Sheet" jika daftar kosong
             if (participants.length === 0) {
                 tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Belum ada peserta yang ditambahkan.</td></tr>';
-                finalSubmitButton.disabled = true;
+                finalSubmitButton.style.display = 'none';
                 return;
             }
             
-            finalSubmitButton.disabled = false;
+            finalSubmitButton.style.display = 'block';
 
             participants.forEach((data, index) => {
                 const row = tableBody.insertRow();
@@ -272,10 +328,10 @@
         }
 
         // ===================================
-        // LOGIKA CRUD LOKAL
+        // LOGIKA MODAL & CRUD LOKAL
         // ===================================
         
-        // Menampilkan form detail peserta
+        // [2] Tombol Tambah Peserta (Menampilkan Modal)
         btnAddParticipant.addEventListener('click', function() {
             const institusi = document.getElementById('namaInstitusi').value;
             const jurusan = document.getElementById('jurusanProdi').value;
@@ -286,16 +342,17 @@
             }
             
             detailForm.reset();
+            ktpSection.style.display = 'none'; // Sembunyikan KTP secara default
+            document.getElementById('noKTP').required = false;
+
             participantIndexToEdit = -1; // Mode Add
-            modalParticipant.style.display = 'block';
-            document.getElementById('namaInstitusi').disabled = true;
-            document.getElementById('jurusanProdi').disabled = true;
+            modalOverlay.style.display = 'flex'; // Tampilkan modal
+            setFormEnabled(institusiForm, false); // Disable Institusi/Jurusan Form
         });
 
         document.getElementById('btnCancel').addEventListener('click', function() {
-            modalParticipant.style.display = 'none';
-            document.getElementById('namaInstitusi').disabled = false;
-            document.getElementById('jurusanProdi').disabled = false;
+            modalOverlay.style.display = 'none';
+            setFormEnabled(institusiForm, true); // Enable Institusi/Jurusan Form
         });
         
         // Logika tampilan No. KTP
@@ -309,10 +366,11 @@
                 } else {
                     ktpSection.style.display = 'none';
                     document.getElementById('noKTP').required = false;
-                    document.getElementById('noKTP').value = ''; // Kosongkan jika usia di bawah 17
+                    document.getElementById('noKTP').value = ''; 
                 }
             } else {
                  ktpSection.style.display = 'none';
+                 document.getElementById('noKTP').required = false;
             }
         });
 
@@ -324,7 +382,8 @@
                 namaLengkap: document.getElementById('namaLengkap').value,
                 nim: document.getElementById('nim').value,
                 agama: document.getElementById('agama').value,
-                jenisKelamin: document.querySelector('input[name="jenisKelamin"]:checked').value,
+                // Ambil nilai dari dropdown Jenis Kelamin
+                jenisKelamin: document.getElementById('jenisKelamin').value, 
                 tempatLahir: document.getElementById('tempatLahir').value,
                 tanggalLahir: document.getElementById('tanggalLahir').value,
                 jalan: document.getElementById('jalan').value,
@@ -339,7 +398,7 @@
             };
 
             if (!validateDetails(data)) {
-                return; // Gagal validasi
+                return;
             }
             
             if (participantIndexToEdit > -1) {
@@ -356,25 +415,25 @@
                 alert("Data peserta berhasil ditambahkan ke daftar.");
             }
 
-            modalParticipant.style.display = 'none';
-            document.getElementById('namaInstitusi').disabled = false;
-            document.getElementById('jurusanProdi').disabled = false;
+            modalOverlay.style.display = 'none';
+            setFormEnabled(institusiForm, true);
             renderParticipants();
         });
 
         function editParticipant(index) {
             const data = participants[index];
-            participantIndexToEdit = index; // Mode Edit
+            participantIndexToEdit = index;
 
-            // Isi form dengan data yang akan diedit
+            // Isi form (termasuk KTP logic)
             document.getElementById('namaLengkap').value = data.namaLengkap;
             document.getElementById('nim').value = data.nim;
             document.getElementById('agama').value = data.agama;
-            document.querySelector(`input[name="jenisKelamin"][value="${data.jenisKelamin}"]`).checked = true;
+            document.getElementById('jenisKelamin').value = data.jenisKelamin; // Set dropdown JK
+
             document.getElementById('tempatLahir').value = data.tempatLahir;
-            document.getElementById('tanggalLahir').value = data.tanggalLahir; // Trigger KTP logic
+            document.getElementById('tanggalLahir').value = data.tanggalLahir; 
             
-            // Logika KTP harus dipanggil manual setelah mengisi tanggal
+            // Panggil logic KTP
             document.getElementById('tanggalLahir').dispatchEvent(new Event('change')); 
             document.getElementById('noKTP').value = data.noKTP; 
 
@@ -387,9 +446,8 @@
             document.getElementById('startDate').value = data.startDate;
             document.getElementById('endDate').value = data.endDate;
 
-            modalParticipant.style.display = 'block';
-            document.getElementById('namaInstitusi').disabled = true;
-            document.getElementById('jurusanProdi').disabled = true;
+            modalOverlay.style.display = 'flex';
+            setFormEnabled(institusiForm, false);
         }
 
         function deleteParticipant(index) {
@@ -421,23 +479,22 @@
                 return;
             }
             
-            setFormEnabled(document.body, false, 'Mengirim Data...'); // Disable seluruh halaman
+            setFormEnabled(document.body, false, 'Mengirim Data...');
             
-            // Format data untuk dikirim
             const dataToSend = participants.map((p, index) => ({
-                no: index + 1, // Kolom A3
-                namaInstitusi: institusi, // Kolom B3
-                jurusanProdi: jurusan, // Kolom C3
-                namaLengkap: p.namaLengkap, // Kolom D3
-                nim: p.nim, // Kolom E3
-                agama: p.agama, // Kolom F3
-                jenisKelamin: p.jenisKelamin, // Kolom G3
-                ttl: `${p.tempatLahir}, ${p.tanggalLahir}`, // Kolom H3
-                alamat: `${p.jalan}, ${p.kelurahan}, ${p.kecamatan}, ${p.kota} (${p.kodePos})`, // Kolom I3
-                noTelp: p.noTelp, // Kolom J3
-                noKTP: p.noKTP || 'N/A', // Kolom K3
-                startDate: p.startDate, // Kolom L3
-                endDate: p.endDate // Kolom M3
+                no: index + 1,
+                namaInstitusi: institusi,
+                jurusanProdi: jurusan,
+                namaLengkap: p.namaLengkap,
+                nim: p.nim,
+                agama: p.agama,
+                jenisKelamin: p.jenisKelamin,
+                ttl: `${p.tempatLahir}, ${p.tanggalLahir}`,
+                alamat: `${p.jalan}, ${p.kelurahan}, ${p.kecamatan}, ${p.kota} (${p.kodePos})`,
+                noTelp: p.noTelp,
+                noKTP: p.noKTP || 'N/A',
+                startDate: p.startDate,
+                endDate: p.endDate
             }));
 
             fetch(WEB_APP_URL, {
@@ -448,7 +505,7 @@
             })
             .then(() => {
                 alert('✅ Semua data peserta berhasil disimpan ke Google Sheet!');
-                participants = []; // Kosongkan daftar lokal
+                participants = []; 
                 document.getElementById('institusiForm').reset();
                 renderParticipants();
             })
@@ -457,7 +514,7 @@
                 alert('❌ Gagal mengirim data. Cek koneksi atau Apps Script.');
             })
             .finally(() => {
-                setFormEnabled(document.body, true); // Aktifkan kembali
+                setFormEnabled(document.body, true);
                 finalSubmitButton.textContent = 'Kirim Semua Data ke Sheet';
             });
         });
