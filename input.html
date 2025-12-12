@@ -597,11 +597,12 @@
             });
         });
 
-        // ===================================
-        // INISIALISASI
-        // ===================================
-        renderParticipants();
-        loadMasterData(); 
+        document.addEventListener('DOMContentLoaded', (event) => {
+    // Jalankan render tabel lokal
+    renderParticipants(); 
+    // Mulai memuat data master dari Apps Script (ini yang paling lambat)
+    loadMasterData(); 
+});
     </script>
 </body>
 </html>
