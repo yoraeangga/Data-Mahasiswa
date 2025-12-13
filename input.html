@@ -30,8 +30,9 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
         }
         .form-group label { display: block; margin-top: 10px; font-weight: 600; }
+        /* Terapkan font dan style pada input standar dan Select2 */
         .form-group input, .form-group select, .form-group textarea, .select2-container--default .select2-selection--single { 
-            font-family: 'Poppins', sans-serif; /* Terapkan font pada input */
+            font-family: 'Poppins', sans-serif; 
             width: 100%; 
             padding: 10px; 
             margin-top: 5px; 
@@ -41,12 +42,12 @@
             box-sizing: border-box; 
         }
         
-        /* STYLE TAMBAHAN SELECT2 */
+        /* STYLE TAMBAHAN SELECT2 (agar tampilannya rapi) */
         .select2-container .select2-selection--single {
-            height: 40px !important; /* Sesuaikan tinggi */
+            height: 40px !important; 
         }
         .select2-container--default .select2-selection--single .select2-selection__rendered {
-            line-height: 20px !important; /* Agar teks di tengah */
+            line-height: 20px !important; 
             padding-left: 0;
             padding-top: 0;
         }
@@ -68,7 +69,7 @@
         .action-cell { width: 1%; white-space: nowrap; }
         .back-link { display: block; text-align: center; margin-top: 30px; color: #007bff; text-decoration: none; }
         
-        /* [2] STYLE UNTUK MODAL POP-UP */
+        /* STYLE UNTUK MODAL POP-UP */
         #modalOverlay {
             position: fixed;
             top: 0;
@@ -76,7 +77,7 @@
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.7);
-            display: none; /* Awalnya tersembunyi */
+            display: none; 
             justify-content: center;
             align-items: center;
             z-index: 1000;
@@ -263,36 +264,39 @@
         const tempatLahirSelect = document.getElementById('tempatLahir');
         const kotaAlamatSelect = document.getElementById('kotaAlamat');
 
-        // GANTI SELURUH FUNGSI INI DENGAN KODE DI BAWAH INI
-function setFormEnabled(formElement, enabled, text = 'Loading...') {
-    // 1. Tangani tombol Submit/Final
-    const finalButton = document.getElementById('finalSubmit');
-    if(finalButton) {
-        finalButton.disabled = !enabled;
-        if (!enabled) finalButton.textContent = text;
-        else finalButton.textContent = 'Kirim Semua Data ke Sheet';
-    }
 
-    // 2. Tangani input standar (Input, Textarea, Select non-Select2)
-    const inputs = document.querySelectorAll('input, textarea, select:not(#namaInstitusi):not(#tempatLahir):not(#kotaAlamat):not(#jurusanProdi), button:not(#finalSubmit)');
-    inputs.forEach(input => {
-        input.disabled = !enabled;
-    });
-    
-    // 3. Tangani Select2 (Hanya jika JQuery sudah ada)
-    if (typeof jQuery !== 'undefined') {
-        const select2Elements = [institusiSelect, tempatLahirSelect, kotaAlamatSelect, jurusanSelect];
-        select2Elements.forEach(el => {
-            if ($(el).hasClass("select2-hidden-accessible")) {
-                $(el).prop('disabled', !enabled).trigger('change');
+        // ===================================
+        // FUNGSI UTILITY (ENABLE/DISABLE)
+        // ===================================
+        function setFormEnabled(formElement, enabled, text = 'Loading...') {
+            // 1. Tangani tombol Submit/Final
+            const finalButton = document.getElementById('finalSubmit');
+            if(finalButton) {
+                finalButton.disabled = !enabled;
+                if (!enabled) finalButton.textContent = text;
+                else finalButton.textContent = 'Kirim Semua Data ke Sheet';
             }
-        });
-        
-        // Atur status tombol 'Tambah Data Peserta'
-        btnAddParticipant.disabled = !enabled;
-    }
-}
 
+            // 2. Tangani input standar (Input, Textarea, Select non-Select2)
+            const inputs = document.querySelectorAll('input, textarea, select:not(#namaInstitusi):not(#tempatLahir):not(#kotaAlamat):not(#jurusanProdi), button:not(#finalSubmit)');
+            inputs.forEach(input => {
+                input.disabled = !enabled;
+            });
+            
+            // 3. Tangani Select2 (Hanya jika JQuery sudah ada)
+            if (typeof jQuery !== 'undefined') {
+                const select2Elements = [institusiSelect, tempatLahirSelect, kotaAlamatSelect, jurusanSelect];
+                select2Elements.forEach(el => {
+                    // Cek apakah Select2 sudah diinisialisasi
+                    if ($(el).hasClass("select2-hidden-accessible")) {
+                        $(el).prop('disabled', !enabled).trigger('change');
+                    }
+                });
+                
+                // Atur status tombol 'Tambah Data Peserta'
+                btnAddParticipant.disabled = !enabled;
+            }
+        }
 
 
         // ===================================
@@ -426,9 +430,8 @@ function setFormEnabled(formElement, enabled, text = 'Loading...') {
 
         // ============== EVENT LISTENER UNTUK DEPENDENT DROPDOWN ==============
         // Ganti event listener standard dengan event listener Select2:select
-        // Event ini dipanggil setiap kali pengguna memilih item (baik dari search atau klik)
         $(institusiSelect).on('select2:select', function (e) {
-            const selectedInstitusi = e.params.data.id; // Nilai yang dipilih
+            const selectedInstitusi = e.params.data.id; 
 
             // Hapus dan buat ulang Select2 Jurusan
             $(jurusanSelect).select2('destroy');
@@ -485,8 +488,9 @@ function setFormEnabled(formElement, enabled, text = 'Loading...') {
         // ===================================
         
         btnAddParticipant.addEventListener('click', function() {
-            const institusi = $(institusiSelect).val(); // Ambil nilai Select2
-            const jurusan = $(jurusanSelect).val(); // Ambil nilai Select2
+            // Ambil nilai dari Select2
+            const institusi = $(institusiSelect).val(); 
+            const jurusan = $(jurusanSelect).val(); 
 
             if (!institusi || !jurusan) {
                 alert("Harap pilih Nama Institusi dan Jurusan/Prodi terlebih dahulu.");
@@ -498,8 +502,8 @@ function setFormEnabled(formElement, enabled, text = 'Loading...') {
             document.getElementById('noKTP').required = false;
 
             // Reset nilai Select2 di modal
-            $(tempatLahirSelect).val('').trigger('change');
-            $(kotaAlamatSelect).val('').trigger('change');
+            $(tempatLahirSelect).val(null).trigger('change');
+            $(kotaAlamatSelect).val(null).trigger('change');
 
             participantIndexToEdit = -1; 
             modalOverlay.style.display = 'flex'; 
@@ -582,7 +586,7 @@ function setFormEnabled(formElement, enabled, text = 'Loading...') {
             document.getElementById('agama').value = data.agama;
             document.getElementById('jenisKelamin').value = data.jenisKelamin; 
 
-            // Set nilai Select2
+            // Set nilai Select2 (Trigger 'change' untuk memperbarui tampilan Select2)
             $(tempatLahirSelect).val(data.tempatLahir).trigger('change');
             document.getElementById('tanggalLahir').value = data.tanggalLahir; 
             
@@ -614,80 +618,78 @@ function setFormEnabled(formElement, enabled, text = 'Loading...') {
         // ===================================
         // LOGIKA SUBMIT KE GOOGLE SHEET
         // ===================================
-        // GANTI SELURUH EVENT LISTENER INI DENGAN KODE DI BAWAH INI
 
-finalSubmitButton.addEventListener('click', function() {
-    if (participants.length === 0) {
-        alert("Tidak ada data peserta yang akan dikirim.");
-        return;
-    }
-    
-    // PENGAMBILAN NILAI DARI SELECT2 (PASTIKAN MENGGUNAKAN JQUERY .val())
-    const institusi = $(institusiSelect).val(); 
-    const jurusan = $(jurusanSelect).val(); 
-    
-    if (!institusi || !jurusan) {
-        alert("Harap lengkapi Detail Institusi dan Jurusan sebelum mengirim data.");
-        return;
-    }
+        finalSubmitButton.addEventListener('click', function() {
+            if (participants.length === 0) {
+                alert("Tidak ada data peserta yang akan dikirim.");
+                return;
+            }
+            
+            // PENGAMBILAN NILAI DARI SELECT2
+            const institusi = $(institusiSelect).val(); 
+            const jurusan = $(jurusanSelect).val(); 
+            
+            if (!institusi || !jurusan) {
+                alert("Harap lengkapi Detail Institusi dan Jurusan sebelum mengirim data.");
+                return;
+            }
 
-    if (!confirm(`Anda akan mengirim ${participants.length} data peserta dari institusi ${institusi} ke Google Sheet. Lanjutkan?`)) {
-        return;
-    }
-    
-    // 1. Terapkan DISABLE di SEMUA form
-    setFormEnabled(document.body, false, 'Mengirim Data...');
-    
-    const dataToSend = participants.map((p, index) => ({
-        no: index + 1,
-        namaInstitusi: institusi,
-        jurusanProdi: jurusan,
-        namaLengkap: p.namaLengkap,
-        nim: p.nim,
-        agama: p.agama,
-        jenisKelamin: p.jenisKelamin,
-        // Pastikan p.tempatLahir dan p.kota diambil dari nilai Select2 sebelumnya
-        ttl: `${p.tempatLahir}, ${p.tanggalLahir}`,
-        alamat: `${p.jalan}, ${p.kelurahan}, ${p.kecamatan}, ${p.kota} (${p.kodePos})`,
-        noTelp: p.noTelp,
-        noKTP: p.noKTP || 'N/A',
-        startDate: p.startDate,
-        endDate: p.endDate
-    }));
+            if (!confirm(`Anda akan mengirim ${participants.length} data peserta dari institusi ${institusi} ke Google Sheet. Lanjutkan?`)) {
+                return;
+            }
+            
+            // 1. Terapkan DISABLE di SEMUA form
+            setFormEnabled(document.body, false, 'Mengirim Data...');
+            
+            const dataToSend = participants.map((p, index) => ({
+                no: index + 1,
+                namaInstitusi: institusi,
+                jurusanProdi: jurusan,
+                namaLengkap: p.namaLengkap,
+                nim: p.nim,
+                agama: p.agama,
+                jenisKelamin: p.jenisKelamin,
+                ttl: `${p.tempatLahir}, ${p.tanggalLahir}`,
+                alamat: `${p.jalan}, ${p.kelurahan}, ${p.kecamatan}, ${p.kota} (${p.kodePos})`,
+                noTelp: p.noTelp,
+                noKTP: p.noKTP || 'N/A',
+                startDate: p.startDate,
+                endDate: p.endDate
+            }));
 
-    fetch(WEB_APP_URL, {
-        method: 'POST',
-        mode: 'no-cors', 
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'bulkSave', records: dataToSend })
-    })
-    .then(() => {
-        // ASUMSI SUKSES karena mode: 'no-cors'. Kita tunda 3 detik.
-        setTimeout(() => {
-            alert('✅ Data (kemungkinan besar) berhasil disimpan ke Google Sheet! Harap cek spreadsheet Anda.');
-            
-            // 2. Lakukan RESET data lokal dan form
-            participants = []; 
-            document.getElementById('institusiForm').reset();
-            
-            // Reset nilai Select2 dengan JQuery
-            $(institusiSelect).val(null).trigger('change');
-            $(jurusanSelect).val(null).trigger('change');
-            
-            renderParticipants();
-            
-            // 3. Re-enable form
-            setFormEnabled(document.body, true);
-        }, 3000); // Penundaan 3 detik untuk menunggu server Apps Script selesai
-    })
-    .catch(error => {
-        console.error('Error saat fetch data:', error);
-        alert('❌ Error Koneksi: Gagal mengirim data. Cek koneksi internet Anda.');
-        
-        // 4. Pastikan form di-enable kembali jika terjadi error klien
-        setFormEnabled(document.body, true);
-    });
-});
+            fetch(WEB_APP_URL, {
+                method: 'POST',
+                mode: 'no-cors', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'bulkSave', records: dataToSend })
+            })
+            .then(() => {
+                // ASUMSI SUKSES karena mode: 'no-cors'. Kita tunda 3 detik.
+                setTimeout(() => {
+                    alert('✅ Data (kemungkinan besar) berhasil disimpan ke Google Sheet! Harap cek spreadsheet Anda.');
+                    
+                    // 2. Lakukan RESET data lokal dan form
+                    participants = []; 
+                    document.getElementById('institusiForm').reset();
+                    
+                    // Reset nilai Select2 dengan JQuery
+                    $(institusiSelect).val(null).trigger('change');
+                    $(jurusanSelect).val(null).trigger('change');
+                    
+                    renderParticipants();
+                    
+                    // 3. Re-enable form
+                    setFormEnabled(document.body, true);
+                }, 3000); // Penundaan 3 detik untuk menunggu server Apps Script selesai
+            })
+            .catch(error => {
+                console.error('Error saat fetch data:', error);
+                alert('❌ Error Koneksi: Gagal mengirim data. Cek koneksi internet Anda.');
+                
+                // 4. Pastikan form di-enable kembali jika terjadi error klien
+                setFormEnabled(document.body, true);
+            });
+        });
 
 
         document.addEventListener('DOMContentLoaded', (event) => {
