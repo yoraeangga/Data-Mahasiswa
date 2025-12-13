@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Input Data Peserta</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    
     <style>
         /* [4] RUBY SEMUA FONT JADI POPPINS */
         body { 
@@ -23,7 +30,7 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
         }
         .form-group label { display: block; margin-top: 10px; font-weight: 600; }
-        .form-group input, .form-group select, .form-group textarea { 
+        .form-group input, .form-group select, .form-group textarea, .select2-container--default .select2-selection--single { 
             font-family: 'Poppins', sans-serif; /* Terapkan font pada input */
             width: 100%; 
             padding: 10px; 
@@ -33,6 +40,20 @@
             border-radius: 4px; 
             box-sizing: border-box; 
         }
+        
+        /* STYLE TAMBAHAN SELECT2 */
+        .select2-container .select2-selection--single {
+            height: 40px !important; /* Sesuaikan tinggi */
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 20px !important; /* Agar teks di tengah */
+            padding-left: 0;
+            padding-top: 0;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 38px !important; 
+        }
+
         .btn-green { background-color: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
         .btn-green:hover:not(:disabled) { background-color: #1e7e34; }
         .btn-red { background-color: #dc3545; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; }
@@ -236,7 +257,7 @@
         const finalSubmitButton = document.getElementById('finalSubmit');
         const institusiForm = document.getElementById('institusiForm');
         
-        // VARIABEL SELECT BARU (Lebih mudah diakses)
+        // VARIABEL SELECT (Lebih mudah diakses)
         const institusiSelect = document.getElementById('namaInstitusi');
         const jurusanSelect = document.getElementById('jurusanProdi');
         const tempatLahirSelect = document.getElementById('tempatLahir');
@@ -254,6 +275,15 @@
             inputs.forEach(input => {
                 input.disabled = !enabled;
             });
+            
+            // Khusus Select2, nonaktifkan elemen Select2
+            $(institusiSelect).select2(enabled ? 'enable' : 'disable');
+            $(tempatLahirSelect).select2(enabled ? 'enable' : 'disable');
+            $(kotaAlamatSelect).select2(enabled ? 'enable' : 'disable');
+            // Jurusan hanya dinonaktifkan jika form institusi dinonaktifkan
+            if (formElement.id === 'institusiForm') {
+                $(jurusanSelect).select2(enabled ? 'enable' : 'disable');
+            }
         }
 
         // ===================================
@@ -301,11 +331,16 @@
         }
         
         // ===================================
-        // FUNGSI DROPDOWN DINAMIS (PULL DATA)
+        // FUNGSI DROPDOWN DINAMIS (PULL DATA & SELECT2)
         // ===================================
         
         function fillDropdown(element, dataList, placeholder) {
             if (!element) return; 
+            
+            // Hapus instance Select2 yang mungkin ada sebelum mengisi ulang
+            if ($(element).hasClass("select2-hidden-accessible")) {
+                $(element).select2('destroy');
+            }
 
             element.innerHTML = `<option value="">-- ${placeholder} --</option>`;
 
@@ -315,6 +350,26 @@
                 option.textContent = item;
                 element.appendChild(option);
             });
+        }
+        
+        // Fungsi untuk mengaktivasi Select2 setelah data terisi
+        function activateSelect2(element, dropdownParent = null) {
+            const config = { 
+                width: '100%',
+                placeholder: $(element).find('option:first').text(),
+                allowClear: true // Izinkan clear pilihan
+            };
+            
+            if (dropdownParent) {
+                config.dropdownParent = dropdownParent;
+            }
+
+            // Jurusan tidak perlu kolom pencarian jika datanya sedikit
+            if (element === jurusanSelect) {
+                 config.minimumResultsForSearch = Infinity; // Sembunyikan search box
+            }
+            
+            $(element).select2(config);
         }
 
         async function loadMasterData() {
@@ -328,37 +383,46 @@
 
             try {
                 const response = await fetch(WEB_APP_URL, { method: 'GET' });
-                // Response harus dibaca sebagai JSON
                 const data = await response.json(); 
                 
                 // 1. Simpan map Jurusan secara global
                 masterJurusanMap = data.jurusanMap; 
                 
-                // 2. Mengisi dropdown Institusi
+                // 2. Mengisi dan mengaktifkan Select2 Institusi
                 fillDropdown(institusiSelect, data.institusiList, 'Pilih Institusi');
+                activateSelect2(institusiSelect);
                 
-                // 3. Mengisi dropdown Kota/Wilayah (DIPASTIKAN HANYA DATA WILAYAH YANG MASUK)
+                // 3. Mengisi dan mengaktifkan Select2 Kota/Wilayah
                 fillDropdown(tempatLahirSelect, data.wilayah, 'Pilih Kota/Kabupaten'); 
+                activateSelect2(tempatLahirSelect, $('#modalContent'));
+
                 fillDropdown(kotaAlamatSelect, data.wilayah, 'Pilih Kota/Kabupaten'); 
+                activateSelect2(kotaAlamatSelect, $('#modalContent'));
                 
-                console.log("Data master berhasil dimuat.");
+                // 4. Aktifkan Select2 Jurusan (tanpa search box)
+                activateSelect2(jurusanSelect); 
+                
+                console.log("Data master berhasil dimuat dan Select2 aktif.");
 
             } catch (error) {
                 console.error('Gagal memuat data master:', error);
-                // alert('❌ Gagal mengambil daftar pilihan dari Google Sheet.');
                 
                 // Atur kembali placeholder jika gagal
                 fillDropdown(institusiSelect, [], 'Gagal Memuat Data');
-                fillDropdown(jurusanSelect, [], 'Pilih Institusi Dahulu'); // Reset Jurusan
+                fillDropdown(jurusanSelect, [], 'Pilih Institusi Dahulu'); 
                 fillDropdown(tempatLahirSelect, [], 'Gagal Memuat Data');
                 fillDropdown(kotaAlamatSelect, [], 'Gagal Memuat Data');
             }
         }
 
         // ============== EVENT LISTENER UNTUK DEPENDENT DROPDOWN ==============
-        institusiSelect.addEventListener('change', function() {
-            const selectedInstitusi = this.value;
+        // Ganti event listener standard dengan event listener Select2:select
+        // Event ini dipanggil setiap kali pengguna memilih item (baik dari search atau klik)
+        $(institusiSelect).on('select2:select', function (e) {
+            const selectedInstitusi = e.params.data.id; // Nilai yang dipilih
 
+            // Hapus dan buat ulang Select2 Jurusan
+            $(jurusanSelect).select2('destroy');
             jurusanSelect.innerHTML = '<option value="">-- Pilih Jurusan --</option>'; // Reset
 
             if (selectedInstitusi && masterJurusanMap[selectedInstitusi]) {
@@ -371,6 +435,8 @@
                     jurusanSelect.appendChild(option);
                 });
             }
+            // Aktifkan kembali Select2 Jurusan setelah mengisi data
+            activateSelect2(jurusanSelect);
         });
         
         // ===================================
@@ -410,8 +476,8 @@
         // ===================================
         
         btnAddParticipant.addEventListener('click', function() {
-            const institusi = document.getElementById('namaInstitusi').value;
-            const jurusan = document.getElementById('jurusanProdi').value;
+            const institusi = $(institusiSelect).val(); // Ambil nilai Select2
+            const jurusan = $(jurusanSelect).val(); // Ambil nilai Select2
 
             if (!institusi || !jurusan) {
                 alert("Harap pilih Nama Institusi dan Jurusan/Prodi terlebih dahulu.");
@@ -421,6 +487,10 @@
             detailForm.reset();
             ktpSection.style.display = 'none'; 
             document.getElementById('noKTP').required = false;
+
+            // Reset nilai Select2 di modal
+            $(tempatLahirSelect).val('').trigger('change');
+            $(kotaAlamatSelect).val('').trigger('change');
 
             participantIndexToEdit = -1; 
             modalOverlay.style.display = 'flex'; 
@@ -460,11 +530,10 @@
                 nim: document.getElementById('nim').value,
                 agama: document.getElementById('agama').value,
                 jenisKelamin: document.getElementById('jenisKelamin').value, 
-                tempatLahir: document.getElementById('tempatLahir').value,
+                tempatLahir: $(tempatLahirSelect).val(), // Ambil nilai Select2
                 tanggalLahir: document.getElementById('tanggalLahir').value,
                 jalan: document.getElementById('jalan').value,
-                // PERBAIKAN: Menggunakan 'kotaAlamat' BUKAN 'kota'
-                kota: document.getElementById('kotaAlamat').value, 
+                kota: $(kotaAlamatSelect).val(), // Ambil nilai Select2
                 kelurahan: document.getElementById('kelurahan').value,
                 kecamatan: document.getElementById('kecamatan').value,
                 kodePos: document.getElementById('kodePos').value,
@@ -504,7 +573,8 @@
             document.getElementById('agama').value = data.agama;
             document.getElementById('jenisKelamin').value = data.jenisKelamin; 
 
-            document.getElementById('tempatLahir').value = data.tempatLahir;
+            // Set nilai Select2
+            $(tempatLahirSelect).val(data.tempatLahir).trigger('change');
             document.getElementById('tanggalLahir').value = data.tanggalLahir; 
             
             // Panggil logic KTP
@@ -512,8 +582,7 @@
             document.getElementById('noKTP').value = data.noKTP; 
 
             document.getElementById('jalan').value = data.jalan;
-            // PERBAIKAN: Menggunakan 'kotaAlamat' BUKAN 'kota'
-            document.getElementById('kotaAlamat').value = data.kota; 
+            $(kotaAlamatSelect).val(data.kota).trigger('change'); // Set nilai Select2
             
             document.getElementById('kelurahan').value = data.kelurahan;
             document.getElementById('kecamatan').value = data.kecamatan;
@@ -543,8 +612,9 @@
                 return;
             }
             
-            const institusi = document.getElementById('namaInstitusi').value;
-            const jurusan = document.getElementById('jurusanProdi').value;
+            // Ambil nilai dari Select2
+            const institusi = $(institusiSelect).val(); 
+            const jurusan = $(jurusanSelect).val(); 
             
             if (!institusi || !jurusan) {
                 alert("Harap lengkapi Detail Institusi dan Jurusan sebelum mengirim data.");
@@ -580,14 +650,17 @@
                 body: JSON.stringify({ action: 'bulkSave', records: dataToSend })
             })
             .then(() => {
-                // Di sini tidak bisa membaca response dari 'no-cors', tapi asumsi sukses
                 alert('✅ Semua data peserta berhasil disimpan ke Google Sheet!');
                 participants = []; 
+                
+                // Reset form Institusi/Jurusan
                 document.getElementById('institusiForm').reset();
+                $(institusiSelect).val('').trigger('change');
+                $(jurusanSelect).val('').trigger('change'); 
+                
                 renderParticipants();
             })
             .catch(error => {
-                // Biasanya tidak tercapai karena mode: 'no-cors', tapi tetap dijaga
                 console.error('Error:', error);
                 alert('❌ Gagal mengirim data. Cek koneksi atau Apps Script.');
             })
@@ -598,11 +671,11 @@
         });
 
         document.addEventListener('DOMContentLoaded', (event) => {
-    // Jalankan render tabel lokal
-    renderParticipants(); 
-    // Mulai memuat data master dari Apps Script (ini yang paling lambat)
-    loadMasterData(); 
-});
+            // Jalankan render tabel lokal
+            renderParticipants(); 
+            // Mulai memuat data master dari Apps Script (ini yang paling lambat)
+            loadMasterData(); 
+        });
     </script>
 </body>
 </html>
