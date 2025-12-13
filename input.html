@@ -263,28 +263,37 @@
         const tempatLahirSelect = document.getElementById('tempatLahir');
         const kotaAlamatSelect = document.getElementById('kotaAlamat');
 
+        // GANTI SELURUH FUNGSI INI DENGAN KODE DI BAWAH INI
+function setFormEnabled(formElement, enabled, text = 'Loading...') {
+    // 1. Tangani tombol Submit/Final
+    const finalButton = document.getElementById('finalSubmit');
+    if(finalButton) {
+        finalButton.disabled = !enabled;
+        if (!enabled) finalButton.textContent = text;
+        else finalButton.textContent = 'Kirim Semua Data ke Sheet';
+    }
+
+    // 2. Tangani input standar (Input, Textarea, Select non-Select2)
+    const inputs = document.querySelectorAll('input, textarea, select:not(#namaInstitusi):not(#tempatLahir):not(#kotaAlamat):not(#jurusanProdi), button:not(#finalSubmit)');
+    inputs.forEach(input => {
+        input.disabled = !enabled;
+    });
+    
+    // 3. Tangani Select2 (Hanya jika JQuery sudah ada)
+    if (typeof jQuery !== 'undefined') {
+        const select2Elements = [institusiSelect, tempatLahirSelect, kotaAlamatSelect, jurusanSelect];
+        select2Elements.forEach(el => {
+            if ($(el).hasClass("select2-hidden-accessible")) {
+                $(el).prop('disabled', !enabled).trigger('change');
+            }
+        });
         
-        // Fungsi untuk mengaktifkan/menonaktifkan elemen
-        function setFormEnabled(formElement, enabled, text = 'Loading...') {
-            const button = formElement.querySelector('button[type="submit"], button#finalSubmit');
-            if(button) {
-                button.disabled = !enabled;
-                if (!enabled) button.textContent = text;
-            }
-            const inputs = formElement.querySelectorAll('input, select, textarea, button:not(#finalSubmit)');
-            inputs.forEach(input => {
-                input.disabled = !enabled;
-            });
-            
-            // Khusus Select2, nonaktifkan elemen Select2
-            $(institusiSelect).select2(enabled ? 'enable' : 'disable');
-            $(tempatLahirSelect).select2(enabled ? 'enable' : 'disable');
-            $(kotaAlamatSelect).select2(enabled ? 'enable' : 'disable');
-            // Jurusan hanya dinonaktifkan jika form institusi dinonaktifkan
-            if (formElement.id === 'institusiForm') {
-                $(jurusanSelect).select2(enabled ? 'enable' : 'disable');
-            }
-        }
+        // Atur status tombol 'Tambah Data Peserta'
+        btnAddParticipant.disabled = !enabled;
+    }
+}
+
+
 
         // ===================================
         // VALIDASI
@@ -605,70 +614,81 @@
         // ===================================
         // LOGIKA SUBMIT KE GOOGLE SHEET
         // ===================================
+        // GANTI SELURUH EVENT LISTENER INI DENGAN KODE DI BAWAH INI
+
+finalSubmitButton.addEventListener('click', function() {
+    if (participants.length === 0) {
+        alert("Tidak ada data peserta yang akan dikirim.");
+        return;
+    }
+    
+    // PENGAMBILAN NILAI DARI SELECT2 (PASTIKAN MENGGUNAKAN JQUERY .val())
+    const institusi = $(institusiSelect).val(); 
+    const jurusan = $(jurusanSelect).val(); 
+    
+    if (!institusi || !jurusan) {
+        alert("Harap lengkapi Detail Institusi dan Jurusan sebelum mengirim data.");
+        return;
+    }
+
+    if (!confirm(`Anda akan mengirim ${participants.length} data peserta dari institusi ${institusi} ke Google Sheet. Lanjutkan?`)) {
+        return;
+    }
+    
+    // 1. Terapkan DISABLE di SEMUA form
+    setFormEnabled(document.body, false, 'Mengirim Data...');
+    
+    const dataToSend = participants.map((p, index) => ({
+        no: index + 1,
+        namaInstitusi: institusi,
+        jurusanProdi: jurusan,
+        namaLengkap: p.namaLengkap,
+        nim: p.nim,
+        agama: p.agama,
+        jenisKelamin: p.jenisKelamin,
+        // Pastikan p.tempatLahir dan p.kota diambil dari nilai Select2 sebelumnya
+        ttl: `${p.tempatLahir}, ${p.tanggalLahir}`,
+        alamat: `${p.jalan}, ${p.kelurahan}, ${p.kecamatan}, ${p.kota} (${p.kodePos})`,
+        noTelp: p.noTelp,
+        noKTP: p.noKTP || 'N/A',
+        startDate: p.startDate,
+        endDate: p.endDate
+    }));
+
+    fetch(WEB_APP_URL, {
+        method: 'POST',
+        mode: 'no-cors', 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'bulkSave', records: dataToSend })
+    })
+    .then(() => {
+        // ASUMSI SUKSES karena mode: 'no-cors'. Kita tunda 3 detik.
+        setTimeout(() => {
+            alert('✅ Data (kemungkinan besar) berhasil disimpan ke Google Sheet! Harap cek spreadsheet Anda.');
+            
+            // 2. Lakukan RESET data lokal dan form
+            participants = []; 
+            document.getElementById('institusiForm').reset();
+            
+            // Reset nilai Select2 dengan JQuery
+            $(institusiSelect).val(null).trigger('change');
+            $(jurusanSelect).val(null).trigger('change');
+            
+            renderParticipants();
+            
+            // 3. Re-enable form
+            setFormEnabled(document.body, true);
+        }, 3000); // Penundaan 3 detik untuk menunggu server Apps Script selesai
+    })
+    .catch(error => {
+        console.error('Error saat fetch data:', error);
+        alert('❌ Error Koneksi: Gagal mengirim data. Cek koneksi internet Anda.');
         
-        finalSubmitButton.addEventListener('click', function() {
-            if (participants.length === 0) {
-                alert("Tidak ada data peserta yang akan dikirim.");
-                return;
-            }
-            
-            // Ambil nilai dari Select2
-            const institusi = $(institusiSelect).val(); 
-            const jurusan = $(jurusanSelect).val(); 
-            
-            if (!institusi || !jurusan) {
-                alert("Harap lengkapi Detail Institusi dan Jurusan sebelum mengirim data.");
-                return;
-            }
+        // 4. Pastikan form di-enable kembali jika terjadi error klien
+        setFormEnabled(document.body, true);
+    });
+});
 
-            if (!confirm(`Anda akan mengirim ${participants.length} data peserta ke Google Sheet. Lanjutkan?`)) {
-                return;
-            }
-            
-            setFormEnabled(document.body, false, 'Mengirim Data...');
-            
-            const dataToSend = participants.map((p, index) => ({
-                no: index + 1,
-                namaInstitusi: institusi,
-                jurusanProdi: jurusan,
-                namaLengkap: p.namaLengkap,
-                nim: p.nim,
-                agama: p.agama,
-                jenisKelamin: p.jenisKelamin,
-                ttl: `${p.tempatLahir}, ${p.tanggalLahir}`,
-                alamat: `${p.jalan}, ${p.kelurahan}, ${p.kecamatan}, ${p.kota} (${p.kodePos})`,
-                noTelp: p.noTelp,
-                noKTP: p.noKTP || 'N/A',
-                startDate: p.startDate,
-                endDate: p.endDate
-            }));
-
-            fetch(WEB_APP_URL, {
-                method: 'POST',
-                mode: 'no-cors', 
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'bulkSave', records: dataToSend })
-            })
-            .then(() => {
-                alert('✅ Semua data peserta berhasil disimpan ke Google Sheet!');
-                participants = []; 
-                
-                // Reset form Institusi/Jurusan
-                document.getElementById('institusiForm').reset();
-                $(institusiSelect).val('').trigger('change');
-                $(jurusanSelect).val('').trigger('change'); 
-                
-                renderParticipants();
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('❌ Gagal mengirim data. Cek koneksi atau Apps Script.');
-            })
-            .finally(() => {
-                setFormEnabled(document.body, true);
-                finalSubmitButton.textContent = 'Kirim Semua Data ke Sheet';
-            });
-        });
 
         document.addEventListener('DOMContentLoaded', (event) => {
             // Jalankan render tabel lokal
