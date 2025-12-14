@@ -112,6 +112,16 @@
                         <option value="">-- Pilih Institusi Dahulu --</option>
                     </select>
                 </div>
+                
+                <h4>Periode Kegiatan</h4>
+                <div class="form-group">
+                    <label for="startDate">Start Date:</label>
+                    <input type="date" id="startDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="endDate">End Date:</label>
+                    <input type="date" id="endDate" required>
+                </div>
                 <button type="button" class="btn-green" id="btnAddParticipant" style="width: 100%;">Tambah Data Peserta</button>
             </form>
         </div>
@@ -220,16 +230,6 @@
                         </div>
                     </div>
                     
-                    <h4>Periode Kegiatan</h4>
-                    <div class="form-group">
-                        <label for="startDate">Start Date:</label>
-                        <input type="date" id="startDate" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="endDate">End Date:</label>
-                        <input type="date" id="endDate" required>
-                    </div>
-                    
                     <button type="submit" class="btn-green" style="width: 100%; margin-bottom: 10px;">Simpan ke Daftar</button>
                     <button type="button" class="btn-red-large" id="btnCancel" style="width: 100%;">Batal</button>
                 </form>
@@ -238,7 +238,6 @@
     </div>
     
     <script>
-        // PASTIKAN WEB_APP_URL INI SUDAH DI DEPLOY ULANG
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzyePp9jiDTMJ-qCWQqknQ0EhOaFE0M-xCD_Y3s4YMYtY-pOuil50B0QIwZgngi0GyAHQ/exec"; 
         
         let participants = [];
@@ -260,6 +259,10 @@
         const tempatLahirSelect = document.getElementById('tempatLahir');
         const kotaAlamatSelect = document.getElementById('kotaAlamat');
 
+        // VARIABEL DATE UTAMA
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
+
 
         // ===================================
         // FUNGSI UTILITY (ENABLE/DISABLE) - DIPERBAIKI TOTAL
@@ -278,7 +281,6 @@
             const inputs = institusiForm.querySelectorAll('input, textarea, select, button:not(#btnAddParticipant)');
             
             inputs.forEach(input => {
-                // Pastikan input di luar modal dinonaktifkan
                 input.disabled = !enabled;
             });
             
@@ -312,9 +314,14 @@
         }
 
         function validateDetails(data) {
+            // Cek Usia
             const age = calculateAge(data.tanggalLahir);
+            
+            // Cek Tanggal Hari Ini
             const today = new Date();
             today.setHours(0,0,0,0);
+            
+            // Cek Tanggal Kegiatan
             const startDate = new Date(data.startDate);
             const endDate = new Date(data.endDate);
 
@@ -328,6 +335,7 @@
                  return false;
             }
 
+            // Validasi tanggal ini penting, meskipun sudah ada di addParticipant, di sini lebih detail
             if (startDate < today) {
                 alert("Gagal: Start Date tidak boleh kurang dari hari ini.");
                 return false;
@@ -475,12 +483,29 @@
         btnAddParticipant.addEventListener('click', function() {
             const institusi = $(institusiSelect).val(); 
             const jurusan = $(jurusanSelect).val(); 
+            const startDate = startDateInput.value; 
+            const endDate = endDateInput.value; 
 
-            if (!institusi || !jurusan) {
-                alert("Harap pilih Nama Institusi dan Jurusan/Prodi terlebih dahulu.");
+            if (!institusi || !jurusan || !startDate || !endDate) {
+                alert("Harap lengkapi Detail Institusi, Jurusan/Prodi, dan Periode Kegiatan terlebih dahulu.");
                 return;
             }
             
+            // Minimal validasi tanggal sebelum membuka modal
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+
+            if (start < today) {
+                alert("Gagal: Start Date tidak boleh kurang dari hari ini.");
+                return;
+            }
+            if (end < start) {
+                alert("Gagal: End Date tidak boleh kurang dari Start Date.");
+                return;
+            }
+
             detailForm.reset();
             ktpSection.style.display = 'none'; 
             document.getElementById('noKTP').required = false;
@@ -492,13 +517,13 @@
             participantIndexToEdit = -1; 
             modalOverlay.style.display = 'flex'; 
             
-            // Panggil fungsi tanpa parameter form (hanya status enabled)
+            // Menonaktifkan form utama saat modal terbuka
             setFormEnabled(false); 
         });
 
         document.getElementById('btnCancel').addEventListener('click', function() {
             modalOverlay.style.display = 'none';
-            // Panggil fungsi tanpa parameter form (hanya status enabled)
+            // Mengaktifkan form utama saat modal ditutup
             setFormEnabled(true); 
         });
         
@@ -539,8 +564,9 @@
                 kodePos: document.getElementById('kodePos').value,
                 noTelp: document.getElementById('noTelp').value,
                 noKTP: document.getElementById('noKTP').value,
-                startDate: document.getElementById('startDate').value,
-                endDate: document.getElementById('endDate').value,
+                // Mengambil Start Date dan End Date dari input UTAMA
+                startDate: startDateInput.value, 
+                endDate: endDateInput.value,    
             };
 
             if (!validateDetails(data)) {
@@ -586,8 +612,9 @@
             document.getElementById('kecamatan').value = data.kecamatan;
             document.getElementById('kodePos').value = data.kodePos;
             document.getElementById('noTelp').value = data.noTelp;
-            document.getElementById('startDate').value = data.startDate;
-            document.getElementById('endDate').value = data.endDate;
+            
+            // TIDAK PERLU mengisi StartDate/EndDate karena field ada di form utama
+            // dan diasumsikan sama untuk seluruh batch
 
             modalOverlay.style.display = 'flex';
             setFormEnabled(false);
@@ -627,8 +654,10 @@
             
             const dataToSend = participants.map((p, index) => ({
                 no: index + 1,
+                // Mengambil nilai Institusi/Jurusan dari form UTAMA (sebagai data batch)
                 namaInstitusi: institusi,
                 jurusanProdi: jurusan,
+                // Data peserta
                 namaLengkap: p.namaLengkap,
                 nim: p.nim,
                 agama: p.agama,
@@ -637,6 +666,7 @@
                 alamat: `${p.jalan}, ${p.kelurahan}, ${p.kecamatan}, ${p.kota} (${p.kodePos})`,
                 noTelp: p.noTelp,
                 noKTP: p.noKTP || 'N/A',
+                // Tanggal diambil dari data peserta yang sudah tersimpan
                 startDate: p.startDate,
                 endDate: p.endDate
             }));
@@ -656,9 +686,11 @@
                     participants = []; 
                     document.getElementById('institusiForm').reset();
                     
-                    // Reset nilai Select2 dengan JQuery
+                    // Reset nilai Select2 dan Date dengan JQuery/DOM
                     $(institusiSelect).val(null).trigger('change');
                     $(jurusanSelect).val(null).trigger('change');
+                    startDateInput.value = '';
+                    endDateInput.value = '';
                     
                     renderParticipants();
                     
