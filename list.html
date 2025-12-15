@@ -442,76 +442,92 @@ async function loadMasterDataForEdit() {
         // ===================================
         // 4. LOGIKA EDIT (LOAD DATA)
         // ===================================
-        async function editParticipant(rowId) {
-            loadingIndicator.style.display = 'block';
-            dataTableContainer.style.opacity = 0.5;
-            
-            try {
-                // Panggil Apps Script untuk mendapatkan detail data
-                const response = await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    body: createJsonResponse({ 
-                        action: 'getRecordDetail', 
-                        rowId: parseInt(rowId) 
-                    }),
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                
-                const result = await response.json();
-                
-                if (result.status !== 'success') {
-                    throw new Error(result.message || 'Gagal memuat detail data.');
-                }
-                
-                const data = result.record;
+       // ===================================
+// 4. LOGIKA EDIT (LOAD DATA) - KOREKSI
+// ===================================
+async function editParticipant(rowId) {
+    loadingIndicator.style.display = 'block';
+    dataTableContainer.style.opacity = 0.5;
+    
+    try {
+        // Panggil Apps Script untuk mendapatkan detail data
+        const response = await fetch(WEB_APP_URL, {
+            method: 'POST',
+            body: createJsonResponse({ 
+                action: 'getRecordDetail', 
+                rowId: parseInt(rowId) 
+            }),
+            headers: { 'Content-Type': 'application/json' }
+        });
 
-                // Parsing TTL dan Alamat
-                const [tempatLahir, tanggalLahir] = data.ttl.split(', ');
-                // Alamat format: "Jalan, Kelurahan, Kecamatan, Kota (Kodepos)"
-                const alamatParts = data.alamat.split(', ');
-                
-                const kotaAlamat = alamatParts[3] ? alamatParts[3].replace(/[()]/g, '').trim() : '';
-                const kodePos = alamatParts[3] ? alamatParts[3].match(/\(([^)]+)\)/)?.[1] || '' : '';
-                
-                // 1. Isi Hidden Input & Display
-                document.getElementById('edit_rowId').value = data.rowId;
-                document.getElementById('edit_no').value = data.no;
-                document.getElementById('editRowId').textContent = `(Baris: ${data.rowId})`;
-                document.getElementById('edit_institusiDisplay').textContent = data.namaInstitusi;
-                document.getElementById('edit_jurusanDisplay').textContent = data.jurusanProdi;
-                
-                // 2. Isi Data Diri
-                document.getElementById('edit_namaLengkap').value = data.namaLengkap;
-                document.getElementById('edit_nim').value = data.nim;
-                document.getElementById('edit_agama').value = data.agama;
-                document.getElementById('edit_jenisKelamin').value = data.jenisKelamin;
-                
-                // 3. Isi TTL
-                $(tempatLahirSelect).val(tempatLahir).trigger('change');
-                document.getElementById('edit_tanggalLahir').value = tanggalLahir; 
-                document.getElementById('edit_noKTP').value = data.noKTP === 'N/A' ? '' : data.noKTP;
-                
-                // 4. Isi Alamat
-                document.getElementById('edit_jalan').value = alamatParts[0];
-                document.getElementById('edit_kelurahan').value = alamatParts[1];
-                document.getElementById('edit_kecamatan').value = alamatParts[2];
-                $(kotaAlamatSelect).val(kotaAlamat).trigger('change');
-                document.getElementById('edit_kodePos').value = kodePos;
-                document.getElementById('edit_noTelp').value = data.noTelp;
-                
-                // 5. Isi Periode Kegiatan
-                document.getElementById('edit_startDate').value = data.startDate;
-                document.getElementById('edit_endDate').value = data.endDate;
-
-                editModalOverlay.style.display = 'flex';
-
-            } catch (error) {
-                alert(`❌ Error Edit Data: ${error.message}`);
-            } finally {
-                loadingIndicator.style.display = 'none';
-                dataTableContainer.style.opacity = 1;
-            }
+        // 🚨 KOREKSI KRUSIAL: Menangani HTTP Error (misalnya 500 Internal Server Error)
+        if (!response.ok) {
+            const errorText = await response.text();
+            // Ini akan menangkap error dari Apps Script jika sheet tidak ditemukan, dll.
+            throw new Error(`Koneksi Gagal (Status: ${response.status}). Cek Apps Script. Detail: ${errorText.substring(0, 150)}...`);
         }
+        
+        const result = await response.json();
+        
+        // Menangani error yang dikembalikan Apps Script dalam format JSON
+        if (result.status !== 'success') {
+            throw new Error(result.message || 'Gagal memuat detail data.');
+        }
+        
+        const data = result.record;
+
+        // Parsing TTL dan Alamat
+        // Perlu penanganan jika data.ttl null atau undefined
+        const [tempatLahir = '', tanggalLahir = ''] = (data.ttl || ', ').split(', ');
+        
+        // Alamat format: "Jalan, Kelurahan, Kecamatan, Kota (Kodepos)"
+        const alamatParts = (data.alamat || ', , , , ').split(', ');
+        
+        const kotaAlamat = alamatParts[3] ? alamatParts[3].replace(/\([^)]*\)/g, '').trim() : ''; // Menghapus (Kodepos)
+        const kodePosMatch = alamatParts[3] ? alamatParts[3].match(/\(([^)]+)\)/) : null;
+        const kodePos = kodePosMatch ? kodePosMatch[1] : '';
+        
+        // 1. Isi Hidden Input & Display
+        document.getElementById('edit_rowId').value = data.rowId;
+        document.getElementById('edit_no').value = data.no;
+        document.getElementById('editRowId').textContent = `(Baris: ${data.rowId})`;
+        document.getElementById('edit_institusiDisplay').textContent = data.namaInstitusi;
+        document.getElementById('edit_jurusanDisplay').textContent = data.jurusanProdi;
+        
+        // 2. Isi Data Diri
+        document.getElementById('edit_namaLengkap').value = data.namaLengkap;
+        document.getElementById('edit_nim').value = data.nim;
+        document.getElementById('edit_agama').value = data.agama;
+        document.getElementById('edit_jenisKelamin').value = data.jenisKelamin;
+        
+        // 3. Isi TTL
+        // Menggunakan $(element).val().trigger('change') untuk Select2
+        $(tempatLahirSelect).val(tempatLahir).trigger('change');
+        document.getElementById('edit_tanggalLahir').value = tanggalLahir; 
+        document.getElementById('edit_noKTP').value = data.noKTP === 'N/A' ? '' : data.noKTP;
+        
+        // 4. Isi Alamat
+        document.getElementById('edit_jalan').value = alamatParts[0] || '';
+        document.getElementById('edit_kelurahan').value = alamatParts[1] || '';
+        document.getElementById('edit_kecamatan').value = alamatParts[2] || '';
+        $(kotaAlamatSelect).val(kotaAlamat).trigger('change');
+        document.getElementById('edit_kodePos').value = kodePos;
+        document.getElementById('edit_noTelp').value = data.noTelp;
+        
+        // 5. Isi Periode Kegiatan
+        document.getElementById('edit_startDate').value = data.startDate;
+        document.getElementById('edit_endDate').value = data.endDate;
+
+        editModalOverlay.style.display = 'flex';
+
+    } catch (error) {
+        console.error('Error fetching record detail:', error);
+        alert(`❌ Error Edit Data: ${error.message}`);
+    } finally {
+        loadingIndicator.style.display = 'none';
+        dataTableContainer.style.opacity = 1;
+    }
+}
 
 
         // ===================================
