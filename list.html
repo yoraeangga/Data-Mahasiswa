@@ -258,26 +258,42 @@
             return `${WEB_APP_URL}?action=${action}${rowId ? '&rowId=' + rowId : ''}`;
         }
         
-        function fillWilayahDropdown(element, dataList) {
-            if (!element) return; 
-            
-            $(element).select2('destroy');
-            element.innerHTML = `<option value="">-- Pilih Kota/Kabupaten --</option>`;
+        // Di file list.html
 
-            dataList.forEach(item => {
-                const option = document.createElement('option');
-                option.value = item;
-                option.textContent = item;
-                element.appendChild(option);
-            });
-            
-            $(element).select2({ 
-                width: '100%',
-                placeholder: '-- Pilih Kota/Kabupaten --',
-                allowClear: true,
-                dropdownParent: $('#editModalContent') // Penting agar Select2 muncul di atas modal
-            });
-        }
+function fillWilayahDropdown(element, dataList) {
+    // 1. Pastikan elemen ditemukan di DOM
+    if (!element) return; 
+    
+    // 2. Pastikan jQuery sudah dimuat sebelum menggunakan '$'
+    if (typeof jQuery === 'undefined') {
+        console.error("jQuery is not loaded.");
+        return;
+    }
+    
+    // *Koreksi:* Hanya destroy jika Select2 sudah diinisialisasi sebelumnya.
+    // Ini adalah pengecekan yang lebih aman.
+    if ($(element).data('select2')) {
+        $(element).select2('destroy');
+    }
+    
+    element.innerHTML = `<option value="">-- Pilih Kota/Kabupaten --</option>`;
+
+    dataList.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item;
+        option.textContent = item;
+        element.appendChild(option);
+    });
+    
+    // 3. Inisialisasi Select2 setelah data terisi
+    $(element).select2({ 
+        width: '100%',
+        placeholder: '-- Pilih Kota/Kabupaten --',
+        allowClear: true,
+        // Pastikan dropdownParent menunjuk ke ID modal Anda
+        dropdownParent: $('#editModalContent') 
+    });
+}
 
 
         // ===================================
