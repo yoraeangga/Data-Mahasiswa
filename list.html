@@ -3,100 +3,217 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>List Data Mahasiswa</title>
+    <title>Daftar Peserta (Edit/Hapus)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
     <style>
-        /* Gaya dasar dari index.html */
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f4f4f9;
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background-color: #f4f4f9; 
         }
-        .container {
-            max-width: 400px;
-            margin: 0 auto;
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { color: #333; text-align: center; }
+        .data-section { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            margin-bottom: 20px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
         }
-        h1 {
-            color: #333;
-            text-align: center;
-        }
-        .mahasiswa-card {
-            background-color: white;
-            padding: 15px;
-            margin-bottom: 10px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .mahasiswa-info strong {
-            display: block;
-            font-size: 1.1em;
-            color: #007bff;
-        }
-        .mahasiswa-info span {
-            display: block;
-            color: #555;
-            font-size: 0.9em;
-        }
-        .actions {
-            margin-top: 10px;
-            display: flex;
-            gap: 10px; /* Jarak antar tombol */
-        }
-        .edit-btn, .delete-btn {
-            padding: 8px 12px;
-            border: none;
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        table, th, td { border: 1px solid #ddd; }
+        th, td { padding: 10px; text-align: left; font-size: 0.9em; }
+        th { background-color: #e9ecef; cursor: pointer; }
+        .back-link { display: block; text-align: center; margin-bottom: 20px; color: #007bff; text-decoration: none; }
+        .action-cell { width: 1%; white-space: nowrap; }
+        
+        .loading { text-align: center; padding: 50px; font-size: 1.2em; color: #555; }
+        
+        /* Buttons */
+        .btn-edit { background-color: #ffc107; color: black; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em;}
+        .btn-edit:hover { background-color: #e0a800; }
+        .btn-delete { background-color: #dc3545; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em;}
+        .btn-delete:hover { background-color: #c82333; }
+
+        /* Filter/Search Bar */
+        #searchBar {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
             border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.9em;
-            flex-grow: 1;
-            text-align: center;
-        }
-        .edit-btn {
-            background-color: #ffc107;
-            color: #333;
-        }
-        .delete-btn {
-            background-color: #dc3545;
-            color: white;
-        }
-        .back-link {
-            display: block;
-            text-align: center;
-            margin-top: 30px;
-            color: #007bff;
-            text-decoration: none;
+            box-sizing: border-box;
+            font-size: 1em;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📝 Edit/Delete Data Mahasiswa</h1>
-
-        <div class="mahasiswa-card">
-            <div class="mahasiswa-info">
-                <strong>Budi Santoso</strong>
-                <span>NIM: 12345678</span>
-                <span>Prodi: Teknik Informatika</span>
-            </div>
-            <div class="actions">
-                <button class="edit-btn">Edit</button>
-                <button class="delete-btn">Hapus</button>
-            </div>
-        </div>
-        
-        <div class="mahasiswa-card">
-            <div class="mahasiswa-info">
-                <strong>Siti Aisyah</strong>
-                <span>NIM: 87654321</span>
-                <span>Prodi: Manajemen Bisnis</span>
-            </div>
-            <div class="actions">
-                <button class="edit-btn">Edit</button>
-                <button class="delete-btn">Hapus</button>
-            </div>
-        </div>
-        
+        <h1>📝 Daftar Peserta (Edit/Hapus)</h1>
         <a href="index.html" class="back-link">← Kembali ke Menu</a>
+
+        <div class="data-section">
+            <input type="text" id="searchBar" placeholder="Cari berdasarkan Nama atau NIM...">
+            
+            <h2>Total Peserta: <span id="totalCount">...</span></h2>
+
+            <div id="loadingIndicator" class="loading">
+                Memuat data dari Google Sheet...
+            </div>
+
+            <div id="dataTableContainer" style="overflow-x:auto; display:none;">
+                <table id="participantTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Nama Institusi</th>
+                            <th>Nama Lengkap</th>
+                            <th>NIM</th>
+                            <th>Tgl Lahir</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th class="action-cell">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="participantTableBody">
+                        </tbody>
+                </table>
+            </div>
+            <div id="noDataMessage" class="loading" style="display:none;">
+                Tidak ada data peserta yang ditemukan.
+            </div>
+        </div>
     </div>
+    
+    <script>
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzyePp9jiDTMJ-qCWQqknQ0EhOaFE0M-xCD_Y3s4YMYtY-pOuil50B0QIwZgngi0GyAHQ/exec"; 
+        
+        let allData = []; // Menyimpan semua data yang ditarik dari sheet
+
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const dataTableContainer = document.getElementById('dataTableContainer');
+        const participantTableBody = document.getElementById('participantTableBody');
+        const noDataMessage = document.getElementById('noDataMessage');
+        const totalCount = document.getElementById('totalCount');
+        const searchBar = document.getElementById('searchBar');
+
+        // ===================================
+        // 2. FUNGSI AMBIL DATA DARI GOOGLE SHEET
+        // ===================================
+        async function loadAllParticipants() {
+            loadingIndicator.style.display = 'block';
+            dataTableContainer.style.display = 'none';
+            noDataMessage.style.display = 'none';
+            totalCount.textContent = '...';
+            
+            try {
+                // Mengirim aksi 'getAllData' ke Google Apps Script
+                const response = await fetch(WEB_APP_URL + '?action=getAllData', {
+                    method: 'GET'
+                });
+
+                if (!response.ok) throw new Error('Network response was not ok');
+                
+                const data = await response.json();
+                
+                if (data.status === 'success' && data.records && data.records.length > 0) {
+                    allData = data.records;
+                    renderTable(allData);
+                } else {
+                    allData = [];
+                    renderTable([]);
+                    noDataMessage.style.display = 'block';
+                }
+
+            } catch (error) {
+                console.error('Error loading data:', error);
+                alert('Gagal memuat data peserta. Cek Google Apps Script Anda.');
+                noDataMessage.textContent = 'Gagal memuat data.';
+                noDataMessage.style.display = 'block';
+                dataTableContainer.style.display = 'none';
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+        
+        // ===================================
+        // 3. RENDER TABEL
+        // ===================================
+        function renderTable(dataToRender) {
+            participantTableBody.innerHTML = '';
+            totalCount.textContent = dataToRender.length;
+
+            if (dataToRender.length === 0) {
+                dataTableContainer.style.display = 'none';
+                return;
+            }
+
+            dataToRender.forEach((record, index) => {
+                // Setiap record harus memiliki ID unik (No. Baris di Sheet atau Unique ID)
+                // Kita asumsikan 'rowId' adalah ID unik yang dikembalikan dari Apps Script (Nomor Baris)
+                const row = participantTableBody.insertRow();
+                row.innerHTML = `
+                    <td>${record.no}</td>
+                    <td>${record.namaInstitusi}</td>
+                    <td>${record.namaLengkap}</td>
+                    <td>${record.nim}</td>
+                    <td>${record.ttl.split(', ')[1] || 'N/A'}</td>
+                    <td>${record.startDate}</td>
+                    <td>${record.endDate}</td>
+                    <td class="action-cell">
+                        <button class="btn-edit" onclick="editParticipant('${record.rowId}')">Edit</button>
+                        <button class="btn-delete" onclick="deleteParticipant('${record.rowId}', '${record.namaLengkap}')">Hapus</button>
+                    </td>
+                `;
+            });
+            dataTableContainer.style.display = 'block';
+        }
+
+        // ===================================
+        // FILTER/SEARCH
+        // ===================================
+        searchBar.addEventListener('keyup', function() {
+            const searchTerm = this.value.toLowerCase();
+            
+            const filteredData = allData.filter(record => {
+                const nameMatch = record.namaLengkap.toLowerCase().includes(searchTerm);
+                const nimMatch = record.nim.toString().includes(searchTerm);
+                return nameMatch || nimMatch;
+            });
+
+            renderTable(filteredData);
+        });
+
+
+        // ===================================
+        // 4. LOGIKA EDIT & HAPUS (AKAN DIIMPLEMENTASIKAN DI APPS SCRIPT)
+        // ===================================
+        
+        // placeholder untuk fungsi edit
+        function editParticipant(rowId) {
+             // Di sini kita akan membuka modal baru dan memuat data berdasarkan rowId
+            alert(`Fitur Edit Belum Diimplementasi Penuh. Akan mengedit data dengan Row ID: ${rowId}`);
+            // Lanjutan: Panggil Apps Script untuk ambil detail data, lalu tampilkan di modal
+        }
+
+        // placeholder untuk fungsi hapus
+        function deleteParticipant(rowId, name) {
+            if (confirm(`Yakin ingin menghapus peserta ${name} (Row ID: ${rowId}) secara permanen?`)) {
+                 // Di sini kita akan memanggil Google Apps Script untuk menghapus baris data
+                alert(`Fitur Hapus Belum Diimplementasi Penuh. Akan menghapus data dengan Row ID: ${rowId}`);
+                // Lanjutan: Panggil Apps Script dengan action=delete dan rowId
+                // Setelah sukses, reload data: loadAllParticipants();
+            }
+        }
+
+
+        // ===================================
+        // INITIAL LOAD
+        // ===================================
+        document.addEventListener('DOMContentLoaded', loadAllParticipants);
+    </script>
 </body>
 </html>
