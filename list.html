@@ -283,23 +283,37 @@
         // ===================================
         // 1. LOAD MASTER DATA (Wilayah) UNTUK MODAL EDIT
         // ===================================
-        async function loadMasterDataForEdit() {
-             try {
-                // Panggil doGet tanpa parameter, akan mengembalikan master data dropdown
-                const response = await fetch(WEB_APP_URL, { method: 'GET' });
-                const data = await response.json(); 
-                
-                masterWilayah = data.wilayah || [];
-                
-                // Isi dropdown Select2 di modal
-                fillWilayahDropdown(tempatLahirSelect, masterWilayah);
-                fillWilayahDropdown(kotaAlamatSelect, masterWilayah);
-                
-            } catch (error) {
-                console.error('Gagal memuat data master wilayah:', error);
-                alert('Gagal memuat data wilayah untuk form edit.');
-            }
+        // Di file list.html
+
+async function loadMasterDataForEdit() {
+    try {
+        // Panggil doGet DENGAN action=getMasterData
+        const response = await fetch(WEB_APP_URL + '?action=getMasterData', { method: 'GET' }); // <--- BARIS INI DIUBAH
+        
+        if (!response.ok) {
+            // Ini akan menangkap Failed to Fetch jika ada masalah URL
+             throw new Error(`Gagal Fetch Master Data. Status: ${response.status}.`);
         }
+        
+        const data = await response.json(); 
+        
+        // Cek jika Apps Script mengembalikan error (misal: "Sheet tidak ditemukan")
+        if (data.error) {
+             throw new Error(`Apps Script Error: ${data.error}`);
+        }
+
+        masterWilayah = data.wilayah || [];
+        
+        // Isi dropdown Select2 di modal
+        fillWilayahDropdown(tempatLahirSelect, masterWilayah);
+        fillWilayahDropdown(kotaAlamatSelect, masterWilayah);
+        
+    } catch (error) {
+        console.error('Gagal memuat data master wilayah:', error);
+        // Alert sekarang akan menunjukkan pesan error yang lebih detail
+        alert('Gagal memuat data wilayah untuk form edit. Detail Error: ' + error.message);
+    }
+}
 
 
         // ===================================
