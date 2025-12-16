@@ -369,6 +369,29 @@ async function loadMasterDataForEdit() {
                 loadingIndicator.style.display = 'none';
             }
         }
+
+        // list.html - Di bagian <script>
+
+function formatDateToInput(dateValue) {
+    if (!dateValue) return '';
+    
+    // Pastikan dateValue dikonversi ke Date Object
+    let date = (dateValue instanceof Date) ? dateValue : new Date(dateValue);
+    
+    // Cek jika parsing gagal (Invalid Date)
+    if (isNaN(date.getTime())) {
+        return '';
+    }
+
+    // Ambil komponen tanggal dan format ke YYYY-MM-DD
+    const year = date.getFullYear();
+    // getMonth() dimulai dari 0, jadi perlu +1. padStart(2, '0') untuk 01, 02, dst.
+    const month = String(date.getMonth() + 1).padStart(2, '0'); 
+    const day = String(date.getDate()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}`;
+}
+
         
         function renderTable(dataToRender) {
             participantTableBody.innerHTML = '';
@@ -521,8 +544,10 @@ async function editParticipant(rowId) {
         document.getElementById('edit_noTelp').value = data.noTelp;
         
         // 5. Isi Periode Kegiatan
-        document.getElementById('edit_startDate').value = data.startDate;
-        document.getElementById('edit_endDate').value = data.endDate;
+        document.getElementById('edit_startDate').value = formatDateToInput(data.startDate);
+document.getElementById('edit_endDate').value = formatDateToInput(data.endDate);
+
+editModalOverlay.style.display = 'flex';
 
         editModalOverlay.style.display = 'flex';
 
