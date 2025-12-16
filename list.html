@@ -404,39 +404,43 @@ async function loadMasterDataForEdit() {
         // ===================================
         // 3. LOGIKA HAPUS (DELETE)
         // ===================================
-        async function deleteParticipant(rowId, name) {
-            if (!confirm(`Yakin ingin menghapus peserta ${name} (Baris ${rowId}) secara permanen?`)) {
-                return;
-            }
-            
-            loadingIndicator.style.display = 'block';
-            dataTableContainer.style.opacity = 0.5;
+       async function deleteParticipant(rowId, name) {
+    if (!confirm(`Yakin ingin menghapus peserta ${name} (Baris ${rowId}) secara permanen?`)) {
+        return;
+    }
+    
+    loadingIndicator.style.display = 'block';
+    dataTableContainer.style.opacity = 0.5;
 
-            try {
-                const response = await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    body: createJsonResponse({ 
-                        action: 'deleteRecord', 
-                        rowId: parseInt(rowId) 
-                    }),
-                    headers: { 'Content-Type': 'application/json' }
-                });
+    try {
+        // PERUBAHAN DI SINI (1): Buat objek FormData (URLSearchParams)
+        const formData = new URLSearchParams();
+        formData.append('action', 'deleteRecord');
+        formData.append('rowId', parseInt(rowId));
 
-                const result = await response.json();
-                
-                if (result.status === 'success') {
-                    alert(`✅ ${result.message}`);
-                    await loadAllParticipants(); // Muat ulang data
-                } else {
-                    throw new Error(result.message || 'Gagal menghapus data.');
-                }
-            } catch (error) {
-                alert(`❌ Error Hapus Data: ${error.message}`);
-            } finally {
-                loadingIndicator.style.display = 'none';
-                dataTableContainer.style.opacity = 1;
-            }
+        const response = await fetch(WEB_APP_URL, {
+            method: 'POST',
+            // PERUBAHAN DI SINI (2): Gunakan formData sebagai body
+            body: formData, 
+            // PERUBAHAN DI SINI (3): HAPUS header Content-Type JSON
+            // headers: { 'Content-Type': 'application/json' } // BARIS INI DIHAPUS/DIKOMENTARI
+        });
+
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            alert(`✅ ${result.message}`);
+            await loadAllParticipants(); // Muat ulang data
+        } else {
+            throw new Error(result.message || 'Gagal menghapus data.');
         }
+    } catch (error) {
+        alert(`❌ Error Hapus Data: ${error.message}`);
+    } finally {
+        loadingIndicator.style.display = 'none';
+        dataTableContainer.style.opacity = 1;
+    }
+}
 
 
         // ===================================
@@ -444,26 +448,28 @@ async function loadMasterDataForEdit() {
         // ===================================
        // ===================================
 // 4. LOGIKA EDIT (LOAD DATA) - KOREKSI
-// ===================================
 async function editParticipant(rowId) {
     loadingIndicator.style.display = 'block';
     dataTableContainer.style.opacity = 0.5;
     
     try {
+        // PERUBAHAN DI SINI (1): Buat objek FormData
+        const formData = new URLSearchParams();
+        formData.append('action', 'getRecordDetail');
+        formData.append('rowId', parseInt(rowId));
+
         // Panggil Apps Script untuk mendapatkan detail data
         const response = await fetch(WEB_APP_URL, {
             method: 'POST',
-            body: createJsonResponse({ 
-                action: 'getRecordDetail', 
-                rowId: parseInt(rowId) 
-            }),
-            headers: { 'Content-Type': 'application/json' }
+            // PERUBAHAN DI SINI (2): Gunakan formData sebagai body
+            body: formData, 
+            // PERUBAHAN DI SINI (3): HAPUS header Content-Type JSON
+            // headers: { 'Content-Type': 'application/json' } // BARIS INI DIHAPUS/DIKOMENTARI
         });
 
         // 🚨 KOREKSI KRUSIAL: Menangani HTTP Error (misalnya 500 Internal Server Error)
         if (!response.ok) {
             const errorText = await response.text();
-            // Ini akan menangkap error dari Apps Script jika sheet tidak ditemukan, dll.
             throw new Error(`Koneksi Gagal (Status: ${response.status}). Cek Apps Script. Detail: ${errorText.substring(0, 150)}...`);
         }
         
@@ -476,14 +482,15 @@ async function editParticipant(rowId) {
         
         const data = result.record;
 
+        // ... (Sisa kode pengisian formulir tetap sama) ...
+        
         // Parsing TTL dan Alamat
-        // Perlu penanganan jika data.ttl null atau undefined
         const [tempatLahir = '', tanggalLahir = ''] = (data.ttl || ', ').split(', ');
         
         // Alamat format: "Jalan, Kelurahan, Kecamatan, Kota (Kodepos)"
         const alamatParts = (data.alamat || ', , , , ').split(', ');
         
-        const kotaAlamat = alamatParts[3] ? alamatParts[3].replace(/\([^)]*\)/g, '').trim() : ''; // Menghapus (Kodepos)
+        const kotaAlamat = alamatParts[3] ? alamatParts[3].replace(/\([^)]*\)/g, '').trim() : '';
         const kodePosMatch = alamatParts[3] ? alamatParts[3].match(/\(([^)]+)\)/) : null;
         const kodePos = kodePosMatch ? kodePosMatch[1] : '';
         
@@ -501,7 +508,6 @@ async function editParticipant(rowId) {
         document.getElementById('edit_jenisKelamin').value = data.jenisKelamin;
         
         // 3. Isi TTL
-        // Menggunakan $(element).val().trigger('change') untuk Select2
         $(tempatLahirSelect).val(tempatLahir).trigger('change');
         document.getElementById('edit_tanggalLahir').value = tanggalLahir; 
         document.getElementById('edit_noKTP').value = data.noKTP === 'N/A' ? '' : data.noKTP;
