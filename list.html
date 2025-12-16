@@ -241,6 +241,14 @@
         let allData = []; 
         let masterWilayah = []; 
 
+        const cleanDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    // Menggunakan regex untuk mencocokkan hanya bagian YYYY-MM-DD
+    // Regex: ^(\d{4}-\d{2}-\d{2}) mencocokkan 4 angka, strip, 2 angka, strip, 2 angka
+    const match = dateString.toString().match(/^(\d{4}-\d{2}-\d{2})/);
+    return match ? match[1] : dateString.toString().split('T')[0].split(' ')[0];
+};
+
         const loadingIndicator = document.getElementById('loadingIndicator'); 
         const dataTableContainer = document.getElementById('dataTableContainer'); 
         const participantTableBody = document.getElementById('participantTableBody'); 
@@ -410,20 +418,10 @@
         return; 
     } 
 
-    // Fungsi Pembantu untuk membersihkan string tanggal dari Apps Script.
-    // Ini mengasumsikan format data adalah YYYY-MM-DD HH:MM:SS atau sejenisnya,
-    // dan hanya mengambil bagian sebelum spasi.
-    const cleanDate = (dateString) => {
-        if (!dateString) return 'N/A';
-        // Menggunakan toString() untuk memastikan itu string, lalu split pada spasi.
-        return dateString.toString().split(' ')[0];
-    };
-
-
     dataToRender.forEach((record, index) => { 
         const row = participantTableBody.insertRow(); 
         // TTL format: "Tempat, Tanggal" 
-        // Pastikan tglLahir yang ditampilkan di tabel juga bersih, menggunakan TTL format: "Kota, YYYY-MM-DD"
+        // Note: tglLahir di sini kemungkinan sudah string YYYY-MM-DD jika Apps Script sudah dikoreksi
         const tglLahir = record.ttl ? record.ttl.split(', ')[1] : 'N/A'; 
         
         row.innerHTML = ` 
