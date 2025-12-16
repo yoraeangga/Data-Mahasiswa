@@ -402,36 +402,49 @@
 
         
         function renderTable(dataToRender) { 
-            participantTableBody.innerHTML = ''; 
-            totalCount.textContent = dataToRender.length; 
+    participantTableBody.innerHTML = ''; 
+    totalCount.textContent = dataToRender.length; 
 
-            if (dataToRender.length === 0) { 
-                dataTableContainer.style.display = 'none'; 
-                return; 
-            } 
+    if (dataToRender.length === 0) { 
+        dataTableContainer.style.display = 'none'; 
+        return; 
+    } 
 
-            dataToRender.forEach((record, index) => { 
-                const row = participantTableBody.insertRow(); 
-                // TTL format: "Tempat, Tanggal" 
-                const tglLahir = record.ttl ? record.ttl.split(', ')[1] : 'N/A'; 
-                
-                row.innerHTML = ` 
-                    <td>${record.no}</td> 
-                    <td>${record.namaInstitusi}</td> 
-                    <td>${record.namaLengkap}</td> 
-                    <td>${record.nim}</td> 
-                    <td>${tglLahir}</td> 
-                    <td>${record.startDate}</td> 
-                    <td>${record.endDate}</td> 
-                    <td class="action-cell"> 
-                        <button class="btn-edit" onclick="editParticipant('${record.rowId}')">Edit</button> 
+    // Fungsi Pembantu untuk membersihkan string tanggal dari Apps Script.
+    // Ini mengasumsikan format data adalah YYYY-MM-DD HH:MM:SS atau sejenisnya,
+    // dan hanya mengambil bagian sebelum spasi.
+    const cleanDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        // Menggunakan toString() untuk memastikan itu string, lalu split pada spasi.
+        return dateString.toString().split(' ')[0];
+    };
 
-                        <button class="btn-delete" onclick="deleteParticipant('${record.rowId}', '${record.namaLengkap}')">Hapus</button> 
-                    </td> 
-                `; 
-            }); 
-            dataTableContainer.style.display = 'block'; 
-        } 
+
+    dataToRender.forEach((record, index) => { 
+        const row = participantTableBody.insertRow(); 
+        // TTL format: "Tempat, Tanggal" 
+        // Pastikan tglLahir yang ditampilkan di tabel juga bersih, menggunakan TTL format: "Kota, YYYY-MM-DD"
+        const tglLahir = record.ttl ? record.ttl.split(', ')[1] : 'N/A'; 
+        
+        row.innerHTML = ` 
+            <td>${record.no}</td> 
+            <td>${record.namaInstitusi}</td> 
+            <td>${record.namaLengkap}</td> 
+            <td>${record.nim}</td> 
+            <td>${tglLahir}</td> 
+            
+            <td>${cleanDate(record.startDate)}</td> 
+            <td>${cleanDate(record.endDate)}</td> 
+            
+            <td class="action-cell"> 
+                <button class="btn-edit" onclick="editParticipant('${record.rowId}')">Edit</button> 
+                <button class="btn-delete" onclick="deleteParticipant('${record.rowId}', '${record.namaLengkap}')">Hapus</button> 
+            </td> 
+        `; 
+    }); 
+    dataTableContainer.style.display = 'block'; 
+}
+
 
         // =================================== 
         // 3. LOGIKA HAPUS (DELETE) 
